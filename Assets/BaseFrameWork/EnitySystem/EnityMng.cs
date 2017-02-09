@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+
 public class EnityMng : MonoBehaviour {
 
     protected Dictionary<ulong, Enity> enityDict = new Dictionary<ulong, Enity>();
