@@ -20,7 +20,7 @@ public class UIManager : MonoBehaviour
         instance = this;
     }
 
-    public static void OpenPanel(string uiName)
+    public static void OpenPanel(string uiName,bool closeBottom = false)
     {
         UIBase panel = uiStack.Find((p) => p.UIName.Equals(uiName));
 
@@ -48,9 +48,13 @@ public class UIManager : MonoBehaviour
             panel.transform.localPosition = Vector3.zero;
             panel.transform.localScale = Vector3.one;
 
-            panel.OnBeginOpen();
             panel.OnRefresh();
-            panel.OnEndOpen();
+
+            if (uiStack.Count > 0)
+            {
+                UIBase lastPanel = uiStack[uiStack.Count - 1];
+                lastPanel.gameObject.SetActive(false);
+            }
 
             uiStack.Add(panel);
         }
@@ -67,13 +71,16 @@ public class UIManager : MonoBehaviour
 
         if (uiPanel != null)
         {
-            uiPanel.OnBeginClose();
             uiPanel.gameObject.SetActive(false);
-            uiPanel.OnEndClose();
 
             uiStack.Remove(uiPanel);
 
             uiCache.Add(uiPanel.UIName, uiPanel);
+
+            if (uiStack.Count > 0)
+            {
+                uiStack[uiStack.Count - 1].gameObject.SetActive(true);
+            }
         }
         else
         {

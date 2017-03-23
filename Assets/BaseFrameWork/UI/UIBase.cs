@@ -36,7 +36,7 @@ public class UIBase : MonoBehaviour
 
     public virtual void OnResume()
     {
-        
+
     }
 
     public virtual void OnStop()
@@ -44,7 +44,8 @@ public class UIBase : MonoBehaviour
 
     }
 
-    protected void DispatchMsg(string msgType,UICommon.UIMsg msg)
+
+    protected void DispatchMsg(string msgType, UICommon.UIMsg msg)
     {
 
     }
