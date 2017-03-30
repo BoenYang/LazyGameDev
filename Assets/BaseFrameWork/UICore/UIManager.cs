@@ -1,23 +1,44 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
+/// <summary>
+/// UI管理提，负责UI的关闭，打开相关调度
+/// </summary>
 public class UIManager : MonoBehaviour
 {
+
+    public static UIBase CurrentUIPanel;
+
+    public static Camera UICamera;
+
+    public static Canvas UICanvas;
+
     private static List<UIBase> uiStack = new List<UIBase>();
 
     private static UILoader loader = new UILoader();
 
-    private static Dictionary<string,List<UICommon.UIMsgCallback>> uiMsgDict = new Dictionary<string, List<UICommon.UIMsgCallback>>(); 
+    private static Dictionary<string,List<UIMsgCallback>> uiMsgDict = new Dictionary<string, List<UIMsgCallback>>(); 
 
     private static Dictionary<string,UIBase> uiCache = new Dictionary<string, UIBase>(); 
 
     private static UIManager instance;
 
-    public static UIBase CurrentUIPanel;
+	private static CanvasScaler canvasScaler;
 
     void Awake()
     {
         instance = this;
+		canvasScaler = GetComponent<CanvasScaler> ();
+        UICanvas = GetComponent<Canvas>();
+        GameObject camera = GameObject.Find("UICamera");
+        GameObject eventSystem = GameObject.Find("EventSystem");
+
+        UICamera = camera.GetComponent<Camera>();
+
+        DontDestroyOnLoad(camera);
+        DontDestroyOnLoad(eventSystem);
+        DontDestroyOnLoad(gameObject);
     }
 
     public static void OpenPanel(string uiName,bool closeBottom = false)
@@ -30,6 +51,7 @@ public class UIManager : MonoBehaviour
             if (uiCache.ContainsKey(uiName))
             {
                 panel = uiCache[uiName];
+				uiCache.Remove (uiName);
             }
             else
             {
@@ -47,10 +69,14 @@ public class UIManager : MonoBehaviour
             panel.transform.SetParent(instance.transform);
             panel.transform.localPosition = Vector3.zero;
             panel.transform.localScale = Vector3.one;
-
+			RectTransform rtf = panel.GetComponent<RectTransform> ();
+            rtf.anchorMax = new Vector2(1,1);
+            rtf.anchorMin = new Vector2(0, 0);
+            rtf.offsetMax = new Vector2(0,0);
+            rtf.offsetMin = new Vector2(0, 0);
             panel.OnRefresh();
 
-            if (uiStack.Count > 0)
+			if (uiStack.Count > 0 && closeBottom)
             {
                 UIBase lastPanel = uiStack[uiStack.Count - 1];
                 lastPanel.gameObject.SetActive(false);
@@ -100,15 +126,41 @@ public class UIManager : MonoBehaviour
 
             uiStack.Remove(uiPanel);
             uiCache.Add(uiPanel.UIName, uiPanel);
+
+			if (uiStack.Count > 0)
+			{
+				uiStack[uiStack.Count - 1].gameObject.SetActive(true);
+			}
         }
     }
 
-    public static void DispatchMsg(string msgType,UICommon.UIMsg msg)
+    public static void DispatchMsg(string msgType,UIMsg msg = null)
     {
+        UIMsg m = msg;
+        if (msg == null)
+        {
+            m = new UIMsg();
+        }
 
+        if (uiMsgDict.ContainsKey(msgType))
+        {
+            List<UIMsgCallback> listenerList = uiMsgDict[msgType];
+            for (int i = 0; i < listenerList.Count; i++)
+            {
+                UIMsgCallback listener = listenerList[i];
+                if (listener.Method.IsStatic)
+                {
+                    listener.Invoke(m);
+                }
+                else if(listener.Target != null)
+                {
+                    listener.Invoke(m);
+                }
+            }
+        }
     }
 
-    public static void AddListener(string msgType,UICommon.UIMsgCallback callback)
+    public static void AddListener(string msgType,UIMsgCallback callback)
     {
         if (uiMsgDict.ContainsKey(msgType))
         {
@@ -126,7 +178,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            uiMsgDict.Add(msgType,new List<UICommon.UIMsgCallback>());
+            uiMsgDict.Add(msgType,new List<UIMsgCallback>());
             uiMsgDict[msgType].Add(callback);
         }
     }

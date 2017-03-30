@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// UI Prefab加载器，提供UI加载缓存
+/// </summary>
 public class UILoader {
 
     private Dictionary<string,GameObject> cachedUI = new Dictionary<string, GameObject>();
