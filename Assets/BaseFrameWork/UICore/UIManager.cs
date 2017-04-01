@@ -41,7 +41,7 @@ public class UIManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    public static void OpenPanel(string uiName,bool closeBottom = false)
+    public static void OpenPanel(string uiName,bool closeBottom = false,params object[] args)
     {
         UIBase panel = uiStack.Find((p) => p.UIName.Equals(uiName));
 
@@ -64,7 +64,7 @@ public class UIManager : MonoBehaviour
             }
 
             CurrentUIPanel = panel;
-
+            panel.Args = args;
             panel.gameObject.SetActive(true);
             panel.transform.SetParent(instance.transform);
             panel.transform.localPosition = Vector3.zero;
@@ -106,6 +106,7 @@ public class UIManager : MonoBehaviour
             if (uiStack.Count > 0)
             {
                 uiStack[uiStack.Count - 1].gameObject.SetActive(true);
+                uiStack[uiStack.Count - 1].OnRefresh();
             }
         }
         else
@@ -130,17 +131,17 @@ public class UIManager : MonoBehaviour
 			if (uiStack.Count > 0)
 			{
 				uiStack[uiStack.Count - 1].gameObject.SetActive(true);
-			}
+                uiStack[uiStack.Count - 1].OnRefresh();
+            }
         }
     }
 
-    public static void DispatchMsg(string msgType,UIMsg msg = null)
+    public static void DispatchMsg(string msgType,params object[] args)
     {
-        UIMsg m = msg;
-        if (msg == null)
-        {
-            m = new UIMsg();
-        }
+        UIMsg m = new UIMsg();
+
+        m.MsgType = msgType;
+        m.args = args;
 
         if (uiMsgDict.ContainsKey(msgType))
         {

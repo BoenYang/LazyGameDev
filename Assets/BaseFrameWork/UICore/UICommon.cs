@@ -9,6 +9,8 @@ public enum UIState
 
 public class UIMsg
 {
+    public string MsgType;
+
     public object[] args;
 }
 

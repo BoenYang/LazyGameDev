@@ -94,9 +94,9 @@ public class UIBase : MonoBehaviour
     /// </summary>
     /// <param name="msgType">消息类型</param>
     /// <param name="msg">消息</param>
-    protected void DispatchMsg(string msgType, UIMsg msg = null)
+    protected void DispatchMsg(string msgType, params object[] args)
     {
-        UIManager.DispatchMsg(msgType,msg);
+        UIManager.DispatchMsg(msgType,args);
     }
 
     /// <summary>

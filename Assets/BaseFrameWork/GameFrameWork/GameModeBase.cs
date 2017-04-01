@@ -49,7 +49,7 @@ public abstract class GameModeBase
     /// </summary>
     public virtual void GameOver()
     {
-        GameRunning = true;
+        GameRunning = false;
     }
 
     /// <summary>
