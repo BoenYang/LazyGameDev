@@ -43,6 +43,11 @@ public class UIManager : MonoBehaviour
 
     public static void OpenPanel(string uiName,bool closeBottom = false,params object[] args)
     {
+        if (instance == null)
+        {
+            return;
+        }
+
         UIBase panel = uiStack.Find((p) => p.UIName.Equals(uiName));
 
         if (panel == null)
@@ -138,6 +143,11 @@ public class UIManager : MonoBehaviour
 
     public static void DispatchMsg(string msgType,params object[] args)
     {
+        if (instance == null)
+        {
+            return;
+        }
+
         UIMsg m = new UIMsg();
 
         m.MsgType = msgType;
