@@ -11,16 +11,17 @@ Game Base Framework
 
 #### UI框架
 1. UI基础框架
-- 包含UI基类
-- UI管理器
-- 自动层级控制
-- UI动画接口
-- UI遮罩
-- 对话框，Loading，Tips
-- Loading界面集成
+- UIManager：UI 调度管理器，提供打开，关闭UI接口，提供关闭UI的缓存，提供UI消息系统接口
+- UIBase：UI逻辑实现基类，提供UI的打开（OnOpened），关闭（OnClosed），初始化（OnInit），销毁（OnStop）回调，子类承载具体UI逻辑，集成UI属性配置（配置遮罩，配置是否使用动画）
+- UI动画接口：UI基础框架并不提供动画功能，但UI动画接口，在不修改UI框架的前提下扩展新的接口可以嵌入使用各种动画插件支持UI动画
+- 自动层级控制：Open的UI会自动设置到最顶层，能否实现UI特效，UI的层级自动管理，在代码中动态控制特效和特效承载层的渲染层级，避免UI特效穿透
+- UI过渡动画接口：在UI切换开始的时候有一个OnBeginTransition的回调，有OnTransition的进度回调，有OnEndTransition的回调，可以供自定义创建过渡动画
+- UI遮罩：
+- Dialog，Loading 菊花，Tips
+- Loading界面集成：
 - UI热更新接口
-- 场景切换动画
-- 框架内消息系统
+
+
 2. 编辑器工具：
 - UI prefab生成编辑器工具，代码框架自动生成，枚举自动构建工具
 - 排版布局工具
@@ -28,6 +29,7 @@ Game Base Framework
 - 图集工具
 - UI资源库，保存常用字体配置，颜色配置，按钮
 - UI prefab管理工具
+
 3. 通用UI空间
 - 列表工具
 
