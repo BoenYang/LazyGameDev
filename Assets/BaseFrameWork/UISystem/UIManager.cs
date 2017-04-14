@@ -14,17 +14,19 @@ public class UIManager : MonoBehaviour
 
     public static Canvas UICanvas;
 
-    private static List<UIBase> uiStack = new List<UIBase>();
-
-    private static UILoader loader = new UILoader();
-
-    private static Dictionary<string,List<UIMsgCallback>> uiMsgDict = new Dictionary<string, List<UIMsgCallback>>(); 
-
-    private static Dictionary<string,UIBase> uiCache = new Dictionary<string, UIBase>(); 
-
     private static UIManager instance;
 
-	private static CanvasScaler canvasScaler;
+    private List<UIBase> uiStack = new List<UIBase>();
+
+    private UILoader loader = new UILoader();
+
+    private Dictionary<string,List<UIMsgCallback>> uiMsgDict = new Dictionary<string, List<UIMsgCallback>>(); 
+
+    private Dictionary<string,UIBase> uiCache = new Dictionary<string, UIBase>(); 
+
+	private CanvasScaler canvasScaler;
+
+    private RectTransform panelRoot;
 
     void Awake()
     {
@@ -35,6 +37,16 @@ public class UIManager : MonoBehaviour
         GameObject eventSystem = GameObject.Find("EventSystem");
 
         UICamera = camera.GetComponent<Camera>();
+
+        GameObject panelRootGo = new GameObject("UIPanels");
+        panelRoot = panelRootGo.AddComponent<RectTransform>();
+        panelRoot.SetParent(transform);
+        panelRoot.localPosition = Vector3.zero;
+        panelRoot.localScale = Vector3.one;
+        panelRoot.anchorMax = new Vector2(1, 1);
+        panelRoot.anchorMin = new Vector2(0, 0);
+        panelRoot.offsetMax = new Vector2(0, 0);
+        panelRoot.offsetMin = new Vector2(0, 0);
 
         DontDestroyOnLoad(camera);
         DontDestroyOnLoad(eventSystem);
@@ -47,7 +59,35 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
+        instance._OpenPanel(uiName,closeBottom,args);
+    }
 
+    public static void ClosePanel(string name)
+    {
+        instance._ClosePanel(name);
+    }
+
+    public static void CloseTop()
+    {
+        instance._CloseTop();
+    }
+
+    public static void AddListener(string msgType, UIMsgCallback callback)
+    {
+        instance._AddListener(msgType, callback);
+    }
+
+    public static void DispatchMsg(string msgType,params object[] args)
+    {
+        if (instance == null)
+        {
+            return;
+        }
+        instance._DispatchMsg(msgType,args);
+    }
+
+    private void _OpenPanel(string uiName, bool closeBottom = false, params object[] args)
+    {
         UIBase panel = uiStack.Find((p) => p.UIName.Equals(uiName));
 
         if (panel == null)
@@ -55,8 +95,8 @@ public class UIManager : MonoBehaviour
 
             if (uiCache.ContainsKey(uiName))
             {
-                panel = uiCache[uiName];
-				uiCache.Remove (uiName);
+                panel = instance.uiCache[uiName];
+                instance.uiCache.Remove(uiName);
             }
             else
             {
@@ -71,17 +111,19 @@ public class UIManager : MonoBehaviour
             CurrentUIPanel = panel;
             panel.Args = args;
             panel.gameObject.SetActive(true);
-            panel.transform.SetParent(instance.transform);
+            panel.transform.SetParent(instance.panelRoot);
             panel.transform.localPosition = Vector3.zero;
             panel.transform.localScale = Vector3.one;
-			RectTransform rtf = panel.GetComponent<RectTransform> ();
-            rtf.anchorMax = new Vector2(1,1);
+
+            RectTransform rtf = panel.GetComponent<RectTransform>();
+            rtf.anchorMax = new Vector2(1, 1);
             rtf.anchorMin = new Vector2(0, 0);
-            rtf.offsetMax = new Vector2(0,0);
+            rtf.offsetMax = new Vector2(0, 0);
             rtf.offsetMin = new Vector2(0, 0);
+
             panel.OnRefresh();
 
-			if (uiStack.Count > 0 && closeBottom)
+            if (uiStack.Count > 0 && closeBottom)
             {
                 UIBase lastPanel = uiStack[uiStack.Count - 1];
                 lastPanel.gameObject.SetActive(false);
@@ -96,31 +138,23 @@ public class UIManager : MonoBehaviour
 
     }
 
-    public static void ClosePanel(string name)
+    private void _ClosePanel(string name)
     {
         UIBase uiPanel = uiStack.Find((p) => p.UIName.Equals(name));
 
         if (uiPanel != null)
         {
             uiPanel.gameObject.SetActive(false);
-
             uiStack.Remove(uiPanel);
-
             uiCache.Add(uiPanel.UIName, uiPanel);
-
-            if (uiStack.Count > 0)
-            {
-                uiStack[uiStack.Count - 1].gameObject.SetActive(true);
-                uiStack[uiStack.Count - 1].OnRefresh();
-            }
         }
         else
         {
-            Debug.LogError("没有找到要" + name);
+            Debug.LogError("没有找到要关闭的" + name);
         }
     }
 
-    public static void CloseTop()
+    private void _CloseTop()
     {
         if (uiStack.Count > 0)
         {
@@ -133,21 +167,18 @@ public class UIManager : MonoBehaviour
             uiStack.Remove(uiPanel);
             uiCache.Add(uiPanel.UIName, uiPanel);
 
-			if (uiStack.Count > 0)
-			{
-				uiStack[uiStack.Count - 1].gameObject.SetActive(true);
+            if (uiStack.Count > 0)
+            {
+                uiStack[uiStack.Count - 1].gameObject.SetActive(true);
                 uiStack[uiStack.Count - 1].OnRefresh();
             }
         }
     }
 
-    public static void DispatchMsg(string msgType,params object[] args)
-    {
-        if (instance == null)
-        {
-            return;
-        }
 
+
+    private void _DispatchMsg(string msgType, params object[] args)
+    {
         UIMsg m = new UIMsg();
 
         m.MsgType = msgType;
@@ -163,7 +194,7 @@ public class UIManager : MonoBehaviour
                 {
                     listener.Invoke(m);
                 }
-                else if(listener.Target != null)
+                else if (listener.Target != null)
                 {
                     listener.Invoke(m);
                 }
@@ -171,7 +202,8 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public static void AddListener(string msgType,UIMsgCallback callback)
+
+    private void _AddListener(string msgType, UIMsgCallback callback)
     {
         if (uiMsgDict.ContainsKey(msgType))
         {
@@ -189,7 +221,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            uiMsgDict.Add(msgType,new List<UIMsgCallback>());
+            uiMsgDict.Add(msgType, new List<UIMsgCallback>());
             uiMsgDict[msgType].Add(callback);
         }
     }

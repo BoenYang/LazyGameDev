@@ -9,6 +9,7 @@ public class UIBase : MonoBehaviour
     /// <summary>
     /// UI的名称
     /// </summary>
+    /// 
     [System.NonSerialized]
     public string UIName;
 
