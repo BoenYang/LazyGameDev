@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class CharacterController3D : MonoBehaviour
 {
@@ -14,13 +13,11 @@ public class CharacterController3D : MonoBehaviour
 
     private CharacterController controller;
 
-    private Rigidbody rigidbody;
+    private Vector3 moveVelocity = Vector3.zero;
 
-    private Vector3 horizontalVelocity = Vector3.zero;
+    private Vector3 jumpVelocity = Vector3.zero;
 
-    private Vector3 verticalVelocity = Vector3.zero;
-
-    private bool isJumping = false;
+    private bool isInAir = false;
 
     public Vector3 velocity;
 
@@ -28,36 +25,34 @@ public class CharacterController3D : MonoBehaviour
 
     private bool isPress;
 
+    private bool isAttackWall = false;
+
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
-        rigidbody = GetComponent<Rigidbody>();
     }
 
 
     public void Update()
     {
-
-        if (controller.isGrounded)
+        
+        if (controller.isGrounded && isInAir)
         {
-            isJumping = false;
+            isInAir = false;
             OnGrounded();
         }
-        else
+        else if(isInAir)
         {
             OnAir();
         }
 
-        horizontalVelocity = Vector3.zero;
-        verticalVelocity += new Vector3(0,-Gravity,0) * Time.deltaTime;
-
+        moveVelocity = Vector3.zero;
         isPress = false;
   
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            isJumping = true;
-            verticalVelocity = new Vector3(0, JumpStartV, 0) ;
+            jumpVelocity = InternalJump();
         }
 
         if (Input.GetKey(KeyCode.A))
@@ -65,11 +60,11 @@ public class CharacterController3D : MonoBehaviour
             isPress = true;
             if (controller.isGrounded)
             {
-                horizontalVelocity = new Vector3(-MoveSpeed, 0, 0);
+                moveVelocity = new Vector3(-MoveSpeed, 0, 0);
             }
             else
             {
-                horizontalVelocity = new Vector3(-AirMoveSpeed, 0, 0);
+                moveVelocity = new Vector3(-AirMoveSpeed, 0, 0);
             }
         }
 
@@ -78,31 +73,65 @@ public class CharacterController3D : MonoBehaviour
             isPress = true;
             if (controller.isGrounded)
             {
-                horizontalVelocity = new Vector3(MoveSpeed, 0, 0);
+                moveVelocity = new Vector3(MoveSpeed, 0, 0);
             }
             else
             {
-                horizontalVelocity = new Vector3(AirMoveSpeed, 0, 0);
+                moveVelocity = new Vector3(AirMoveSpeed, 0, 0);
             }
         }
-
-        velocity = horizontalVelocity + verticalVelocity;
-        controller.Move(velocity * Time.deltaTime);
-        if (Mathf.Approximately(controller.velocity.x,0) && isPress)
+        if (jumpVelocity.y > -Gravity)
         {
-            verticalVelocity = new Vector3(0,Mathf.Abs(horizontalVelocity.x * 2),0);
-            horizontalVelocity = Vector3.zero;
+            jumpVelocity += new Vector3(0, -Gravity, 0)*Time.deltaTime;
         }
-        Debug.Log(controller.velocity);
+        else
+        {
+            jumpVelocity.y = -Gravity;
+        }
+        velocity = moveVelocity + jumpVelocity;
+        controller.Move(velocity * Time.deltaTime);
+        if (Mathf.Abs(controller.velocity.x) < 0.1f && isPress)
+        {
+            Debug.Log("attact wall " + controller.velocity.x);
+            isAttackWall = true;
+            isInAir = false;
+            jumpVelocity = new Vector3(0, Mathf.Abs(moveVelocity.x * 2), 0);
+            moveVelocity = Vector3.zero;
+        }
+        else
+        {
+            Debug.Log("not attack wall" + controller.velocity.x);
+            isAttackWall = false;
+        }
+        //Debug.Log(controller.velocity);
+       // rigidbody.velocity = velocity;
     }
 
-    protected void OnAir()
+    protected virtual void OnAir()
     {
-        transform.eulerAngles = transform.eulerAngles + new Vector3(0, 0, rotationSpeed) * Time.deltaTime;
+        if (!isAttackWall)
+        {
+            transform.eulerAngles = transform.eulerAngles + new Vector3(0, 0, rotationSpeed)*Time.deltaTime;
+        }
+        else
+        {
+            transform.rotation = Quaternion.identity;
+        }
     }
 
-    protected void OnGrounded()
+    protected virtual void OnGrounded()
     {
         transform.rotation = Quaternion.identity;
+    }
+
+    protected Vector3 Jump()
+    {
+        return new Vector3(0, JumpStartV, 0);
+    }
+
+    private Vector3 InternalJump()
+    {
+        isInAir = true;
+        return Jump();
     }
 }
