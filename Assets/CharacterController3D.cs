@@ -25,8 +25,19 @@ public class CharacterController3D : MonoBehaviour
 
     private bool isPress;
 
-    private bool isAttackWall = false;
+    public bool isAttachWall = false;
 
+    private int moveDir = 0;
+
+    private int preFrameMoveDir = 0;
+
+    public float wallJumpFlyTime = 0.2f;
+
+    private float wallJumpFlyTimer = 0;
+
+    private bool isWallJump = false;
+
+    private Vector3 wallJumpVelocity;
 
     void Awake()
     {
@@ -46,40 +57,82 @@ public class CharacterController3D : MonoBehaviour
         {
             OnAir();
         }
+        moveDir = 0;
 
         moveVelocity = Vector3.zero;
         isPress = false;
-  
-        if (Input.GetKeyDown(KeyCode.Space))
+
+        if (isWallJump)
         {
-            jumpVelocity = InternalJump();
+            wallJumpFlyTimer -= Time.deltaTime;
+            if (wallJumpFlyTimer <= 0)
+            {
+                isWallJump = false;
+                wallJumpFlyTimer = wallJumpFlyTime;
+                wallJumpVelocity = Vector3.zero;
+            }
         }
 
         if (Input.GetKey(KeyCode.A))
         {
+            moveDir = -1;
             isPress = true;
-            if (controller.isGrounded)
+            if (moveDir != preFrameMoveDir && isWallJump)
             {
-                moveVelocity = new Vector3(-MoveSpeed, 0, 0);
+                isWallJump = false;
+                wallJumpVelocity = Vector3.zero;
             }
-            else
+
+            if (!isWallJump)
             {
-                moveVelocity = new Vector3(-AirMoveSpeed, 0, 0);
+                if (controller.isGrounded)
+                {
+                    moveVelocity = new Vector3(-MoveSpeed, 0, 0);
+                }
+                else
+                {
+                    moveVelocity = new Vector3(-AirMoveSpeed, 0, 0);
+                }
             }
+         
         }
 
         if (Input.GetKey(KeyCode.D))
         {
+            moveDir = 1;
             isPress = true;
-            if (controller.isGrounded)
+            if (moveDir != preFrameMoveDir && isWallJump)
             {
-                moveVelocity = new Vector3(MoveSpeed, 0, 0);
+                isWallJump = false;
+                wallJumpVelocity = Vector3.zero;
             }
-            else
+
+            if (!isWallJump)
             {
-                moveVelocity = new Vector3(AirMoveSpeed, 0, 0);
+                if (controller.isGrounded)
+                {
+                    moveVelocity = new Vector3(MoveSpeed, 0, 0);
+                }
+                else
+                {
+                    moveVelocity = new Vector3(AirMoveSpeed, 0, 0);
+                }
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            jumpVelocity = InternalJump();
+            if (isAttachWall && isPress)
+            {
+                wallJumpVelocity = new Vector3(- MoveSpeed * moveDir * 2,0,0);
+                wallJumpFlyTimer = wallJumpFlyTime;
+                isWallJump = true;
+                Debug.Log("move jump");
+            }
+        }
+
+       
         if (jumpVelocity.y > -Gravity)
         {
             jumpVelocity += new Vector3(0, -Gravity, 0)*Time.deltaTime;
@@ -88,28 +141,31 @@ public class CharacterController3D : MonoBehaviour
         {
             jumpVelocity.y = -Gravity;
         }
-        velocity = moveVelocity + jumpVelocity;
+
+        velocity = moveVelocity + jumpVelocity + wallJumpVelocity;
         controller.Move(velocity * Time.deltaTime);
         if (Mathf.Abs(controller.velocity.x) < 0.1f && isPress)
         {
-            Debug.Log("attact wall " + controller.velocity.x);
-            isAttackWall = true;
+            //Debug.Log("attact wall " + controller.velocity.x);
+            isAttachWall = true;
             isInAir = false;
             jumpVelocity = new Vector3(0, Mathf.Abs(moveVelocity.x * 2), 0);
-            moveVelocity = Vector3.zero;
+            transform.rotation = Quaternion.identity;
         }
-        else
+        else if(Mathf.Abs(controller.velocity.x) > 0.1f)
         {
-            Debug.Log("not attack wall" + controller.velocity.x);
-            isAttackWall = false;
+            //Debug.Log("not attack wall" + controller.velocity.x);
+            isAttachWall = false;
         }
-        //Debug.Log(controller.velocity);
-       // rigidbody.velocity = velocity;
+
+        preFrameMoveDir = moveDir;
+        // Debug.Log(controller.velocity);
+        // rigidbody.velocity = velocity;
     }
 
     protected virtual void OnAir()
     {
-        if (!isAttackWall)
+        if (!isAttachWall)
         {
             transform.eulerAngles = transform.eulerAngles + new Vector3(0, 0, rotationSpeed)*Time.deltaTime;
         }
