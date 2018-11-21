@@ -1,6 +1,7 @@
 package com.sdktoolbox.wechat;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -42,10 +43,10 @@ public class Wechat implements IWXAPIEventHandler{
     private Activity activity;
 
     public void init(Activity activity,String appId,int iconId){
+        this.iconId = iconId;
         this.api =  WXAPIFactory.createWXAPI(activity,appId,false);
         api.registerApp(appId);
         res = activity.getResources();
-        iconId = iconId;
     }
 
     public void Login(){

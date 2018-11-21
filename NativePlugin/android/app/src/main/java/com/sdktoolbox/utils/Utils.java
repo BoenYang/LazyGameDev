@@ -30,6 +30,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,7 +50,47 @@ public class Utils {
 
     private static PowerManager.WakeLock wakeLock;
 
-    public static String getMetaData(Activity activity, String key) {
+    public static Activity activity = getContext();
+
+    public static Activity getContext(){
+        Activity activity = null;
+        Class cls = null;
+        try {
+            cls = getClass("org.cocos2dx.lib.Cocos2dxActivity");
+            if(cls != null){
+                Method method = cls.getMethod("getContext",new Class[]{});
+                activity = (Activity) method.invoke(cls,null);
+            }else{
+                cls = getClass("com.unity3d.player.UnityPlayer");
+                if(cls != null){
+                    Field field = cls.getDeclaredField("currentActivity");
+                    activity = (Activity) field.get(cls);
+                }
+            }
+            return activity;
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return activity;
+    }
+
+    private static Class getClass(String className){
+        Class cls = null;
+        try {
+            cls = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return cls;
+    }
+
+    public static String getMetaData(String key) {
         ApplicationInfo appInfo;
         String msg = "";
         try {
@@ -60,7 +103,7 @@ public class Utils {
         return msg;
     }
 
-    public static String getDeviceId(Activity activity){
+    public static String getDeviceId(){
         try {
             TelephonyManager telephoneManager = (TelephonyManager) activity.getSystemService(Context.TELEPHONY_SERVICE);
             String deviceID = telephoneManager.getDeviceId();
@@ -81,7 +124,7 @@ public class Utils {
         return "";
     }
 
-    public static String getApplicationName(Activity activity){
+    public static String getApplicationName(){
         PackageManager packageManager = null;
         ApplicationInfo applicationInfo = null;
         String applicationName = "";
@@ -97,7 +140,11 @@ public class Utils {
         return applicationName;
     }
 
-    public static String getClipBoardString(Activity activity){
+    public static String getPackageName(){
+        return "";
+    }
+
+    public static String getClipBoardString(){
         android.content.ClipboardManager clipboard = (android.content.ClipboardManager)(activity.getSystemService(Context.CLIPBOARD_SERVICE));
         ClipData primaryClip = clipboard.getPrimaryClip();
         String ret = "";
@@ -137,13 +184,13 @@ public class Utils {
 
     }
 
-    public static void setClipBoardString(Activity activity,String text){
+    public static void setClipBoardString(String text){
         android.content.ClipboardManager clipboard = (android.content.ClipboardManager)(activity.getSystemService(Context.CLIPBOARD_SERVICE));
         android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", text);
         clipboard.setPrimaryClip(clip);
     }
 
-    public static void keepScreenOn(Activity activity,boolean on){
+    public static void keepScreenOn(boolean on){
         if (on) {
             PowerManager pm = (PowerManager) activity.getSystemService(Context.POWER_SERVICE);
             wakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "==KeepScreenOn==");
@@ -171,7 +218,7 @@ public class Utils {
         return false;
     }
 
-    public static int getNetType(Activity activity){
+    public static int getNetType(){
         ConnectivityManager cm = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         String[] network2G = new String[]{"GPRS","EDGE","CDMA","1xRTT","IDEN"};
@@ -197,7 +244,7 @@ public class Utils {
         return -1;
     }
 
-    public static int getWifiStrength(Activity activity){
+    public static int getWifiStrength(){
         WifiManager wifiManager = (WifiManager) activity.getSystemService(WIFI_SERVICE);
         // WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         WifiInfo info = wifiManager.getConnectionInfo();
@@ -210,15 +257,15 @@ public class Utils {
         return 0;
     }
 
-    public static int getSignalStrength(Activity activity){
+    public static int getSignalStrength(){
         return 0;
     }
 
-    public static void getBattery(Activity activity){
+    public static void getBattery(){
 
     }
 
-    public static void saveImgToAblbum(String path,Activity activity) {
+    public static void saveImgToAblbum(String path) {
         File appDir = new File(Environment.getExternalStorageDirectory(),"Temp");
 
         if(!appDir.exists()){
